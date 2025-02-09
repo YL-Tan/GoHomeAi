@@ -24,7 +24,9 @@ func (h *Handler) getDevicesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(devices)
 }
 
-func InitRouter(q *db.Queries) {
+func InitRouter(q *db.Queries) *http.ServeMux{
+	mux := http.NewServeMux()
 	handler := NewHandler(q)
-	http.HandleFunc("/devices", handler.getDevicesHandler)
+	mux.HandleFunc("/devices", handler.getDevicesHandler)
+	return mux
 }

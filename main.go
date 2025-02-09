@@ -2,81 +2,112 @@ package main
 
 import (
 	"context"
-	"embed"
-	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/YL-Tan/GoHomeAi/internal/config"
+	"github.com/YL-Tan/GoHomeAi/internal/db"
 	"github.com/YL-Tan/GoHomeAi/internal/logger"
 	"github.com/YL-Tan/GoHomeAi/internal/server"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/YL-Tan/GoHomeAi/internal/workers"
 	"github.com/joho/godotenv"
-	"github.com/pressly/goose/v3"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-
-	"github.com/YL-Tan/GoHomeAi/internal/db"
 )
 
-//go:embed db/migrations/*.sql
-var embedMigrations embed.FS
-
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	initSystem()
+
+	workerPool := workers.NewWorkerPool()
+	workerPool.Start()
+
+	database := initDatabase(ctx)
+	defer database.Pool.Close()
+
+	server := startServer(database.Queries)
+
+	go monitorSystemHealth(ctx)
+	go enqueueBackgroundJobs(workerPool)
+
+	waitForShutdown(ctx, server, workerPool)
+}
+
+func initSystem() {
 	if err := godotenv.Load(); err != nil {
 		logger.Log.Fatal("No .env file found", zap.Error(err))
 	}
-
 	config.LoadConfig()
 	logger.InitLogger()
 	defer logger.Log.Sync()
+}
 
-	ctx := context.Background()
-    poolConfig, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))
-    if err != nil {
-        logger.Log.Fatal("Failed to initialize database pool", zap.Error(err))
-    }
-    pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
-    if err != nil {
-        logger.Log.Fatal("Failed to create pgx pool", zap.Error(err))
-    }
-    defer pool.Close()
+func initDatabase(ctx context.Context) *db.Database {
+	database, err := db.InitDB(ctx)
+	if err != nil {
+		logger.Log.Fatal("Failed to initialize database", zap.Error(err))
+	}
+	return database
+}
 
-    if err := pool.Ping(ctx); err != nil {
-        logger.Log.Fatal("Failed to ping pgx pool", zap.Error(err))
-    }
-
-    if err := applyMigrations(pool); err != nil {
-        logger.Log.Fatal("Migration failed", zap.Error(err))
-    }
-
-	dbInstance := stdlib.OpenDBFromPool(pool)
-    queries := db.New(dbInstance)
-
-	server.InitRouter(queries)
-
-	port := viper.GetString("server.port")
-	if port == "" {
-		port = "8080"
+func startServer(queries *db.Queries) *http.Server {
+	server := &http.Server{
+		Addr:    ":" + viper.GetString("server.port"),
+		Handler: server.InitRouter(queries),
 	}
 
-	logger.Log.Info("GoHomeAi server is running", zap.String("port", port))
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		logger.Log.Fatal("Server failed", zap.Error(err))
+	go func() {
+		logger.Log.Info("GoHomeAi server is running", zap.String("port", viper.GetString("server.port")))
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Log.Fatal("Server failed", zap.Error(err))
+		}
+	}()
+
+	return server
+}
+
+func monitorSystemHealth(ctx context.Context) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			logger.Log.Info("Performing system health check...")
+			// Add any health checks you need here (e.g., DB, CPU, memory, etc.)
+		case <-ctx.Done():
+			logger.Log.Info("Stopping system health monitoring")
+			return
+		}
 	}
 }
 
-func applyMigrations(pool *pgxpool.Pool) error {
-	goose.SetBaseFS(embedMigrations)
+func enqueueBackgroundJobs(workerPool *workers.WorkerPool) {
+	for i := 1; i <= 10; i++ {
+		workerPool.AddJob(workers.Job{ID: i, Message: "Processing AI Task"})
+		time.Sleep(1 * time.Second)
+	}
+}
 
-	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("failed to set dialect: %w", err)
+func waitForShutdown(ctx context.Context, server *http.Server, workerPool *workers.WorkerPool) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	<-sigChan
+
+	logger.Log.Info("Shutdown signal received, cleaning up...")
+
+	workerPool.Stop()
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer shutdownCancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Log.Fatal("Server shutdown failed", zap.Error(err))
 	}
 
-	db := stdlib.OpenDBFromPool(pool)
-	if err := goose.Up(db, "db/migrations"); err != nil {
-		return fmt.Errorf("migration failed: %w", err)
-	}
-	return nil
+	logger.Log.Info("GoHomeAi server shutdown complete.")
 }
