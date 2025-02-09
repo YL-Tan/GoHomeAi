@@ -2,12 +2,13 @@ package workers
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
 const (
-	NumWorkers   = 3
-	JobQueueSize = 100	// Maximum pending jobs in the queue
+	NumWorkers   = 10
+	JobQueueSize = 100 // Maximum pending jobs in the queue
 )
 
 type Job struct {
@@ -16,8 +17,10 @@ type Job struct {
 }
 
 type WorkerPool struct {
-	jobQueue chan Job
-	quit     chan struct{}
+	jobQueue   chan Job
+	quit       chan struct{}
+	activeJobs int
+	mu         sync.Mutex
 }
 
 func NewWorkerPool() *WorkerPool {
@@ -38,13 +41,21 @@ func (wp *WorkerPool) worker(id int) {
 	for {
 		select {
 		case job := <-wp.jobQueue:
+			wp.incrementActiveJobs()
 			fmt.Printf("Worker %d processing job: %d - %s\n", id, job.ID, job.Message)
 			time.Sleep(2 * time.Second)
+			wp.decrementActiveJobs()
 		case <-wp.quit:
 			fmt.Printf("Worker %d shutting down\n", id)
 			return
 		}
 	}
+}
+
+func (wp *WorkerPool) GetActiveJobs() int {
+	wp.mu.Lock()
+	defer wp.mu.Unlock()
+	return wp.activeJobs
 }
 
 func (wp *WorkerPool) AddJob(job Job) {
@@ -54,4 +65,16 @@ func (wp *WorkerPool) AddJob(job Job) {
 func (wp *WorkerPool) Stop() {
 	close(wp.quit)
 	close(wp.jobQueue)
+}
+
+func (wp *WorkerPool) incrementActiveJobs() {
+	wp.mu.Lock()
+	wp.activeJobs++
+	wp.mu.Unlock()
+}
+
+func (wp *WorkerPool) decrementActiveJobs() {
+	wp.mu.Lock()
+	wp.activeJobs--
+	wp.mu.Unlock()
 }

@@ -30,7 +30,10 @@ func main() {
 	database := initDatabase(ctx)
 	defer database.Pool.Close()
 
-	server := startServer(database.Queries)
+	wsServer := server.NewWebSocketServer()
+	wsServer.Start(workerPool)
+
+	server := startServer(database.Queries, workerPool, wsServer)
 
 	go monitorSystemHealth(ctx)
 	go enqueueBackgroundJobs(workerPool)
@@ -55,10 +58,10 @@ func initDatabase(ctx context.Context) *db.Database {
 	return database
 }
 
-func startServer(queries *db.Queries) *http.Server {
+func startServer(queries *db.Queries, workerPool *workers.WorkerPool, wsServer *server.WebSocketServer) *http.Server {
 	server := &http.Server{
 		Addr:    ":" + viper.GetString("server.port"),
-		Handler: server.InitRouter(queries),
+		Handler: server.InitRouter(queries, workerPool, wsServer),
 	}
 
 	go func() {
@@ -88,9 +91,9 @@ func monitorSystemHealth(ctx context.Context) {
 }
 
 func enqueueBackgroundJobs(workerPool *workers.WorkerPool) {
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= 100; i++ {
 		workerPool.AddJob(workers.Job{ID: i, Message: "Processing AI Task"})
-		time.Sleep(1 * time.Second)
+		time.Sleep(50 * time.Millisecond)
 	}
 }
 

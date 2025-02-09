@@ -10,7 +10,9 @@ import (
 
 type Querier interface {
 	GetDevices(ctx context.Context) ([]Device, error)
+	GetRecentMetrics(ctx context.Context, limit int32) ([]GetRecentMetricsRow, error)
 	InsertDevice(ctx context.Context, arg InsertDeviceParams) (Device, error)
+	InsertSystemMetrics(ctx context.Context, arg InsertSystemMetricsParams) error
 }
 
 var _ Querier = (*Queries)(nil)
