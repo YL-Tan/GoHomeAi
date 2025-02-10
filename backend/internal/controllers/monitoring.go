@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/YL-Tan/GoHomeAi/internal/db"
@@ -30,6 +31,11 @@ type SystemMetrics struct {
 	DiskTotal   uint64  `json:"disk_total"`
 }
 
+type MetricResponse struct {
+	Timestamp string  `json:"timestamp"`
+	CPUUsage  float64 `json:"cpu_usage"`
+}
+
 type MonitoringController struct {
 	Queries *db.Queries
 }
@@ -40,12 +46,25 @@ func NewMonitoringController(q *db.Queries) *MonitoringController {
 }
 
 func (c *MonitoringController) GetSysMetrics(w http.ResponseWriter, r *http.Request) {
-	metrics, err := GetSystemMetrics()
+	metrics, err := c.Queries.GetRecentMetrics(r.Context(), 10)
 	if err != nil {
 		httpresponse.SendJSON(w, http.StatusInternalServerError, false, "Failed to fetch system metrics", nil, err)
 		return
 	}
-	httpresponse.SendJSON(w, http.StatusOK, true, "System metrics fetched successfully", metrics, err)
+
+	var formattedMetrics []MetricResponse
+	for _, metric := range metrics {
+		if metric.Timestamp.Valid {
+			formattedMetrics = append(formattedMetrics, MetricResponse{
+				Timestamp: metric.Timestamp.Time.Format(time.RFC3339),
+				CPUUsage:  metric.CpuUsage,
+			})
+		}
+	}
+	sort.Slice(formattedMetrics, func(i, j int) bool {
+		return formattedMetrics[i].Timestamp < formattedMetrics[j].Timestamp
+	})
+	httpresponse.SendJSON(w, http.StatusOK, true, "Historical system metrics fetched successfully", formattedMetrics, nil)
 }
 
 func (c *MonitoringController) GetHistSysMetrics(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +73,23 @@ func (c *MonitoringController) GetHistSysMetrics(w http.ResponseWriter, r *http.
 		httpresponse.SendJSON(w, http.StatusInternalServerError, false, "Failed to fetch recent system metrics", nil, err)
 		return
 	}
+
+	// Convert to proper JSON format
+	var formattedMetrics []MetricResponse
+	for _, metric := range metrics {
+		if metric.Timestamp.Valid {
+			formattedMetrics = append(formattedMetrics, MetricResponse{
+				Timestamp: metric.Timestamp.Time.Format(time.RFC3339),
+				CPUUsage:  metric.CpuUsage,
+			})
+		}
+	}
+
+	// Sort in ascending order
+	sort.Slice(formattedMetrics, func(i, j int) bool {
+		return formattedMetrics[i].Timestamp < formattedMetrics[j].Timestamp
+	})
+
 	httpresponse.SendJSON(w, http.StatusOK, true, "Historical system metrics fetched successfully", metrics, err)
 }
 
@@ -88,15 +124,6 @@ func GetSystemMetrics() (*db.InsertSystemMetricsParams, error) {
 		DiskTotal:   diskStats.Total,
 	}
 
-	logger.Log.Info("System Metrics Collected",
-		zap.Float64("CPU Usage", metrics.CPUUsage),
-		zap.Uint64("Memory Used", metrics.MemoryUsed),
-		zap.Uint64("Memory Total", metrics.MemoryTotal),
-		zap.Float64("Load Avg", metrics.LoadAvg),
-		zap.Uint64("Disk Used", metrics.DiskUsage),
-		zap.Uint64("Disk Total", metrics.DiskTotal),
-	)
-
 	return &db.InsertSystemMetricsParams{
 		CpuUsage:    metrics.CPUUsage,
 		MemoryUsed:  int64(metrics.MemoryUsed),
@@ -121,17 +148,25 @@ func PrintMetricsEvery(interval time.Duration) {
 	}
 }
 
-func StoreMetrics(ctx context.Context, queries *db.Queries) {
+func StartMetricsCollection(ctx context.Context, queries *db.Queries) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
 	for {
-		time.Sleep(5 * time.Second)
-		metrics, err := GetSystemMetrics()
-		if err != nil {
-			logger.Log.Error("Failed to collect system metrics", zap.Error(err))
-			continue
-		}
-		err = queries.InsertSystemMetrics(ctx, *metrics)
-		if err != nil {
-			logger.Log.Error("Failed to store system metrics", zap.Error(err))
+		select {
+		case <-ticker.C:
+			metrics, err := GetSystemMetrics()
+			if err != nil {
+				logger.Log.Error("Failed to collect system metrics", zap.Error(err))
+				continue
+			}
+			err = queries.InsertSystemMetrics(ctx, *metrics)
+			if err != nil {
+				logger.Log.Error("Failed to store system metrics", zap.Error(err))
+			}
+		case <-ctx.Done():
+			logger.Log.Info("Stopping system metrics collection")
+			return
 		}
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/YL-Tan/GoHomeAi/internal/logger"
 	"github.com/YL-Tan/GoHomeAi/internal/workers"
 	"github.com/gorilla/websocket"
+	"go.uber.org/zap"
 )
 
 // Upgrade HTTP requests to WebSockets
@@ -94,7 +95,11 @@ func (s *WebSocketServer) Start(pool *workers.WorkerPool) {
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
-			metrics, _ := controllers.GetSystemMetrics()
+			metrics, err := controllers.GetSystemMetrics()
+			if err != nil {
+				logger.Log.Error("Failed to fetch system metrics", zap.Error(err))
+				continue
+			}
 
 			alert := ""
 			if metrics.CpuUsage > 80 {
@@ -107,14 +112,17 @@ func (s *WebSocketServer) Start(pool *workers.WorkerPool) {
 			}
 
 			status := map[string]interface{}{
-				"type":    "system_metrics",
-				"metrics": metrics,
-				"alert":   alert,
+				"type":      "system_metrics",
+				"timestamp": time.Now().Format(time.RFC3339),
+				"cpu_usage": metrics.CpuUsage,
+				"alert":     alert,
 			}
+
 			msg, _ := json.Marshal(status)
 			s.broadcast <- msg
 		}
 	}()
+
 }
 
 // HandleWebSocket handles incoming WebSocket connections
