@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { WebSocketProvider } from "@/context/WebSocketProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,9 +28,8 @@ export default function RootLayout({
             <Link href="/metrics" className="hover:text-gray-400">Metrics</Link>
           </div>
         </nav>
-
         {/* Main Content */}
-        <main className="p-6">{children}</main>
+        <WebSocketProvider> <main className="p-6 flex-1">{children}</main></WebSocketProvider>
       </body>
     </html>
   );

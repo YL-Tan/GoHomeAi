@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/YL-Tan/GoHomeAi/internal/config"
-	"github.com/YL-Tan/GoHomeAi/internal/controllers"
 	"github.com/YL-Tan/GoHomeAi/internal/db"
 	"github.com/YL-Tan/GoHomeAi/internal/logger"
 	"github.com/YL-Tan/GoHomeAi/internal/server"
@@ -38,7 +37,6 @@ func main() {
 
 	go monitorSystemHealth(ctx)
 	go enqueueBackgroundJobs(workerPool)
-	go controllers.StartMetricsCollection(ctx, database.Queries)
 	waitForShutdown(ctx, server, workerPool)
 }
 

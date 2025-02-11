@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
@@ -74,7 +72,6 @@ func (c *MonitoringController) GetHistSysMetrics(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// Convert to proper JSON format
 	var formattedMetrics []MetricResponse
 	for _, metric := range metrics {
 		if metric.Timestamp.Valid {
@@ -85,7 +82,6 @@ func (c *MonitoringController) GetHistSysMetrics(w http.ResponseWriter, r *http.
 		}
 	}
 
-	// Sort in ascending order
 	sort.Slice(formattedMetrics, func(i, j int) bool {
 		return formattedMetrics[i].Timestamp < formattedMetrics[j].Timestamp
 	})
@@ -134,39 +130,26 @@ func GetSystemMetrics() (*db.InsertSystemMetricsParams, error) {
 	}, nil
 }
 
-func PrintMetricsEvery(interval time.Duration) {
-	for {
-		metrics, err := GetSystemMetrics()
-		if err != nil {
-			fmt.Println("Error getting system metrics:", err)
-			continue
-		}
-		metricsJSON, _ := json.MarshalIndent(metrics, "", "  ")
-		fmt.Println("System Metrics:", string(metricsJSON))
 
-		time.Sleep(interval)
-	}
-}
+// func StartMetricsCollection(ctx context.Context, queries *db.Queries) {
+// 	ticker := time.NewTicker(5 * time.Second)
+// 	defer ticker.Stop()
 
-func StartMetricsCollection(ctx context.Context, queries *db.Queries) {
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			metrics, err := GetSystemMetrics()
-			if err != nil {
-				logger.Log.Error("Failed to collect system metrics", zap.Error(err))
-				continue
-			}
-			err = queries.InsertSystemMetrics(ctx, *metrics)
-			if err != nil {
-				logger.Log.Error("Failed to store system metrics", zap.Error(err))
-			}
-		case <-ctx.Done():
-			logger.Log.Info("Stopping system metrics collection")
-			return
-		}
-	}
-}
+// 	for {
+// 		select {
+// 		case <-ticker.C:
+// 			metrics, err := GetSystemMetrics()
+// 			if err != nil {
+// 				logger.Log.Error("Failed to collect system metrics", zap.Error(err))
+// 				continue
+// 			}
+// 			err = queries.InsertSystemMetrics(ctx, *metrics)
+// 			if err != nil {
+// 				logger.Log.Error("Failed to store system metrics", zap.Error(err))
+// 			}
+// 		case <-ctx.Done():
+// 			logger.Log.Info("Stopping system metrics collection")
+// 			return
+// 		}
+// 	}
+// }

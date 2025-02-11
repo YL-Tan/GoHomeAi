@@ -15,6 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	Duration = 2 * time.Second
+)
+
 // Upgrade HTTP requests to WebSockets
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -81,7 +85,7 @@ func (s *WebSocketServer) Start(pool *workers.WorkerPool) {
 	// Periodically send job status updates
 	go func() {
 		for {
-			time.Sleep(2 * time.Second) // Adjust frequency as needed
+			time.Sleep(Duration)
 			status := map[string]interface{}{
 				"type":        "job_status",
 				"active_jobs": pool.GetActiveJobs(),
@@ -94,7 +98,7 @@ func (s *WebSocketServer) Start(pool *workers.WorkerPool) {
 	// Periodically send system metrics
 	go func() {
 		for {
-			time.Sleep(2 * time.Second)
+			time.Sleep(Duration)
 			metrics, err := controllers.GetSystemMetrics()
 			if err != nil {
 				logger.Log.Error("Failed to fetch system metrics", zap.Error(err))
@@ -112,10 +116,15 @@ func (s *WebSocketServer) Start(pool *workers.WorkerPool) {
 			}
 
 			status := map[string]interface{}{
-				"type":      "system_metrics",
-				"timestamp": time.Now().Format(time.RFC3339),
-				"cpu_usage": metrics.CpuUsage,
-				"alert":     alert,
+				"type":         "system_metrics",
+				"timestamp":    time.Now().Format(time.RFC3339),
+				"cpu_usage":    metrics.CpuUsage,
+				"memory_used":  metrics.MemoryUsed,
+				"memory_total": metrics.MemoryTotal,
+				"load_avg":     metrics.LoadAvg,
+				"disk_used":    metrics.DiskUsed,
+				"disk_total":   metrics.DiskTotal,
+				"alert":        alert,
 			}
 
 			msg, _ := json.Marshal(status)

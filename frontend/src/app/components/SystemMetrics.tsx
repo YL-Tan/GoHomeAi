@@ -1,35 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import useWebSocket from "react-use-websocket";
+import { useWebSocketData } from "@/context/WebSocketProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface SystemMetrics {
-  cpu_usage: number;
-  memory_used: number;
-  memory_total: number;
-  load_avg: number;
-  disk_used: number;
-  disk_total: number;
-}
-
 export default function SystemMetricsComponent() {
-  const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
-
-  useWebSocket("ws://localhost:8080/ws", {
-    onMessage: (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "system_metrics" && data.metrics) {
-          setMetrics(data.metrics);
-        }
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
-    },
-    shouldReconnect: () => true,
-  });
+  const { metrics } = useWebSocketData();
 
   return (
     <Card className="w-full max-w-md bg-gray-900 text-white shadow-md">

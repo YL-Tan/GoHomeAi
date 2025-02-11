@@ -17,7 +17,6 @@ func InitRouter(q *db.Queries, pool *workers.WorkerPool, wsServer *WebSocketServ
 
 	mux.HandleFunc("/devices", deviceController.GetDevices)
 	mux.HandleFunc("/api/jobs/status", jobController.GetJobStatus)
-	mux.HandleFunc("/api/monitoring", monitoringController.GetSysMetrics)
 	mux.HandleFunc("/api/metrics", monitoringController.GetHistSysMetrics)
 
 	mux.HandleFunc("/ws", wsServer.HandleWebSocket)

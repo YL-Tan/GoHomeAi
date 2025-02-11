@@ -1,7 +1,7 @@
 "use client";
 
 import HistoryGraph from "@/app/components/HistoryGraph";
-import SystemMetrics from "@/app/components/SystemMetrics"; // Your live system metrics component
+import SystemMetrics from "@/app/components/SystemMetrics";
 
 export default function Dashboard() {
   return (
