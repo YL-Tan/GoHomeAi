@@ -41,12 +41,15 @@ func main() {
 }
 
 func initSystem() {
+	logger.InitLogger()
+	defer logger.Log.Sync()
+
 	if err := godotenv.Load(); err != nil {
 		logger.Log.Fatal("No .env file found", zap.Error(err))
 	}
-	config.LoadConfig()
-	logger.InitLogger()
-	defer logger.Log.Sync()
+	if err := config.LoadConfig(); err != nil {
+		logger.Log.Fatal("Failed to load config", zap.Error(err))
+	}
 }
 
 func initDatabase(ctx context.Context) *db.Database {
