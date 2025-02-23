@@ -18,7 +18,7 @@ func InitRouter(q *db.Queries, pool *workers.WorkerPool, wsServer *WebSocketServ
 	mux.HandleFunc("/devices", deviceController.GetDevices)
 	mux.HandleFunc("/api/jobs/status", jobController.GetJobStatus)
 	mux.HandleFunc("/api/metrics", monitoringController.GetHistSysMetrics)
-
+	// TODO: mux.HandleFunc("/health"
 	mux.HandleFunc("/ws", wsServer.HandleWebSocket)
 
 	return LoggingMiddleware(SecurityHeadersMiddleware(CORSMiddleware(mux)))

@@ -1,7 +1,12 @@
 # Ignore environment files
-.env
-/backend/.env
-/frontend/.env
+.env.db
+/backend/.env.production
+/backend/.env.development
+/backend/.env.staging
+
+/frontend/.env.production
+/frontend/.env.development
+/frontend/.env.staging
 
 # Ignore database files
 /backend/*.accdb

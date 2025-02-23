@@ -1,37 +1,59 @@
-version: "3.8"
-
 services:
   backend:
-    build: ./backend
-    ports:
-      - "8080:8080"
-    env_file: 
-      - .env
+    build: 
+      context: ./backend
+      target: ${APP_ENV:-development}
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+    env_file:
+      - ./backend/.env.${APP_ENV:-development}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-8080}:${BACKEND_PORT:-8080}"        
     volumes:
-      - ./backend:/app
-    command: go run main.go
+      - ./backend:/usr/src/app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+    #   interval: 30s
+    #   timeout: 10s
 
   frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
+    build: 
+      context: ./frontend
+      target: ${NODE_ENV:-development}
     depends_on:
       - backend
     volumes:
-      - ./frontend:/app
-    command: npm run dev
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - ./frontend/.env.${NODE_ENV:-development}
 
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     restart: always
-    env_file: 
-      - .env 
+    env_file:
+      - ./.env.db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  pgdata:
+  postgres_data:
