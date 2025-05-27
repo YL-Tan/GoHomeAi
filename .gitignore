@@ -1,3 +1,5 @@
+.DS_Store
+
 # Ignore environment files
 .env.db
 /backend/.env.production
@@ -43,7 +45,7 @@
 
 # Ignore frontend dependencies
 /frontend/node_modules/
-/frontend/.next/
+/frontend/.nuxt/
 /frontend/dist/
 /frontend/build/
 
