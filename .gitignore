@@ -1,4 +1,12 @@
+# General
+.idea/
 .DS_Store
+.fleet
+
+# Python
+__pycache__/
+.env
+*.py[cod]
 
 # Ignore environment files
 .env.db
@@ -48,6 +56,10 @@
 /frontend/.nuxt/
 /frontend/dist/
 /frontend/build/
+/frontend/.output/
+/frontend/.data/
+/frontend/.nitro/
+/frontend/.cache/
 
 # Ignore logs and temporary files
 logs/
