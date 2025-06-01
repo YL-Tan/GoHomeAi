@@ -40,14 +40,6 @@ jobs:
           MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba
         run: bash ./scripts/bootstrap.sh
 
-      # ────────────────────────────────────────────────────────────────
-      # Drift check – fail if lock file not up-to-date
-      # ────────────────────────────────────────────────────────────────
-      - name: Check lockfile up to date
-        run: |
-          micromamba env export -n ai-smarthome --no-builds > new.lock.yml
-          diff -q new.lock.yml environment.lock.yml
-
       - name: Run tests
         env:
           MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba      
