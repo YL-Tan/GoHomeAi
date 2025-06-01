@@ -26,7 +26,7 @@ error() { printf "\e[1;31m[!]\e[0m %s\n" "$*" >&2; }
 mm() { "${MAMBA_BIN}" --root-prefix "${ROOT_PREFIX}" "$@"; }
 
 # -------- 0. Ensure micromamba exists ---------------------------------------
-if ! command -v "${MAMBA_BIN}" >/dev/null 2>&1; then
+if [ ! -x "${MAMBA_BIN}" ]; then
   log "micromamba not found → downloading the latest release …"
 
   case "$(uname -s)-$(uname -m)" in
@@ -40,11 +40,19 @@ if ! command -v "${MAMBA_BIN}" >/dev/null 2>&1; then
   mkdir -p "${ROOT_PREFIX}/bin"
   # download & extract micromamba → $ROOT_PREFIX/bin
   TMP_TAR=$(mktemp)
+  trap 'rm -f "${TMP_TAR:-}"' EXIT
   curl -sL "https://micro.mamba.pm/api/micromamba/${PLATFORM}/latest" -o "${TMP_TAR}"
-  tar --extract --verbose --file="${TMP_TAR}" --bzip2 \
+  tar --extract --file="${TMP_TAR}" --bzip2 \
       --directory="${ROOT_PREFIX}/bin" --strip-components=1 "bin/micromamba"
   rm -f "${TMP_TAR}"
   chmod +x "${MAMBA_BIN}"
+fi
+
+export PATH="${ROOT_PREFIX}/bin:${PATH}"
+
+# Make the micromamba binary discoverable by later CI steps
+if [ -n "${GITHUB_PATH:-}" ]; then
+  echo "${ROOT_PREFIX}/bin" >> "${GITHUB_PATH}"
 fi
 
 # -------- 1. Create / update the environment --------------------------------
@@ -57,9 +65,11 @@ else
 fi
 
 # -------- 2. Install pre-commit hooks ---------------------------------------
-if [ -d .git ]; then
+if [ -d .git ] && [ -f .pre-commit-config.yaml ]; then
   log "Ensuring pre-commit hooks are installed"
   mm run -n "${ENV_NAME}" pre-commit install
+else
+  log "No .pre-commit-config.yaml found - skipping hook install"
 fi
 
 # -------- 3. Export deterministic lock file & clean caches ------------------
