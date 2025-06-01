@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# Bootstrap script for the **ai-smarthome** Python development environment.
+# Bootstrap script for the **gohomeai** Python development environment.
 # - Recreates / updates the micromamba env from a SINGLE authoritative file
 #   (environment.yml in the repo root)
 # - Installs git pre-commit hooks
@@ -10,7 +10,7 @@ set -euo pipefail
 ###############################################################################
 # Editable settings
 ###############################################################################
-ENV_NAME="ai-smarthome"                       # micromamba env name
+ENV_NAME="gohomeai"                       # micromamba env name
 ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-${HOME}/.local/share/mamba}"
 MAMBA_BIN="${ROOT_PREFIX}/bin/micromamba"
 ENV_FILE="$(git rev-parse --show-toplevel)/environment.yml"  # absolute path

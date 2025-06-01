@@ -11,14 +11,14 @@ dev: env
 ## run Go + Python linters
 lint:
 	golangci-lint run ./...
-	micromamba run -n ai-smarthome ruff ml/
+	micromamba run -n gohomeai ruff ml/
 
 ## run unit tests
 test:
 	go test ./...
-	micromamba run -n ai-smarthome pytest ml/tests
+	micromamba run -n gohomeai pytest ml/tests
 
 ## auto-format everything
 fmt:
 	go fmt ./...
-	micromamba run -n ai-smarthome black ml/
+	micromamba run -n gohomeai black ml/

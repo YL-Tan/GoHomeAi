@@ -1,4 +1,4 @@
-name: ai-smarthome
+name: gohomeai
 channels:
   - conda-forge
   - pytorch

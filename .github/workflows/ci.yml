@@ -42,4 +42,4 @@ jobs:
       - name: Run tests
         env:
           MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba      
-        run: micromamba run -n ai-smarthome pytest -q ml/tests
+        run: micromamba run -n gohomeai pytest -q ml/tests
