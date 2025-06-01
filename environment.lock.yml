@@ -191,6 +191,7 @@ dependencies:
   - pyobjc-core=11.0
   - pyobjc-framework-cocoa=11.0
   - pyparsing=3.2.3
+  - pyrefly=0.17.1
   - pysocks=1.7.1
   - pytest=8.3.5
   - pytest-cov=6.1.1

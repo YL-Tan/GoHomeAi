@@ -44,6 +44,11 @@ jobs:
           MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba
         run: bash ./scripts/bootstrap.sh
 
+      - name: Run Pyrefly Type Checker
+        env:
+          MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba      
+        run: pyrefly check
+        
       - name: Run tests
         env:
           MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba

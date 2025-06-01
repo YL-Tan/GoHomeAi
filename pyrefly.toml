@@ -1,0 +1,20 @@
+project_includes = ["ml/**/*"]
+project_excludes = [
+    "**/.[!/.]*",
+    "**/__pycache__/**/*",
+    "**/*venv/**/*",
+    "**/tests/**/*",    
+    "scripts/**",
+    "frontend/**",
+    "backend/**",
+    "docs/**",
+    "infra/**"  
+]
+search_path = ["ml"]
+
+python_version = "3.11"
+
+use_untyped_imports = false
+ignore_missing_source = false
+ignore_errors_in_generated_code = false
+replace_imports_with_any = []
