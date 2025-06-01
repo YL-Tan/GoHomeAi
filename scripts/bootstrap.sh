@@ -35,8 +35,12 @@ if ! command -v "${MAMBA_BIN}" >/dev/null 2>&1; then
   esac
 
   mkdir -p "${ROOT_PREFIX}/bin"
-  curl -sL "https://micro.mamba.pm/api/micromamba/${PLATFORM}/latest" \
-    | tar -xvjf - -C "${ROOT_PREFIX}/bin" micromamba
+  # download & extract micromamba → $ROOT_PREFIX/bin
+  TMP_TAR=$(mktemp)
+  curl -sL "https://micro.mamba.pm/api/micromamba/${PLATFORM}/latest" -o "${TMP_TAR}"
+  tar --extract --verbose --file="${TMP_TAR}" --bzip2 \
+      --directory="${ROOT_PREFIX}/bin" --strip-components=1 "bin/micromamba"
+  rm -f "${TMP_TAR}"
   chmod +x "${MAMBA_BIN}"
 fi
 
