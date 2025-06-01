@@ -15,5 +15,9 @@ repos:
     rev: "7.2.0"
     hooks:
       - id: flake8
-        args: ["--config=pyproject.toml"]
+        args:
+          [
+            "--max-line-length=88",
+            "--extend-ignore=E203,W503"
+          ]
         additional_dependencies: [flake8-bugbear]
