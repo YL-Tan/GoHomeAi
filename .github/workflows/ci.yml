@@ -15,8 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run bootstrap (micromamba)
+
+      - name: Bootstrap Python env
+        env:
+          MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba
         run: bash ./scripts/bootstrap.sh
 
-      - name: Run Python unit tests
+      - name: Run tests
         run: micromamba run -n ai-smarthome pytest -q ml/tests
