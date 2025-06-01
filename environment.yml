@@ -25,10 +25,12 @@ dependencies:
   - torchaudio
   - cpuonly   # remove if use CUDA later
 
-  # (optional) fastapi runtime
+  # fastapi runtime
   - fastapi
   - uvicorn[standard]
 
+  - pytest
+  - pytest-cov 
   # pip extras, if any
   - pip:
       - transformers
