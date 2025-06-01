@@ -1,6 +1,5 @@
 # TODO:
-#	1.	Caching the micromamba env is possible with actions/cache keyed on environment.lock.yml. Add it later once the workflow stabilises.
-#	2.	For Go and Node steps, chain them after the bootstrap—each language toolchain is independent.
+#	1.	For Go and Node steps, chain them after the bootstrap—each language toolchain is independent.
 name: CI
 
 on:

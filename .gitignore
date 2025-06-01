@@ -65,3 +65,5 @@ __pycache__/
 logs/
 *.log
 /tmp/
+
+main.go
