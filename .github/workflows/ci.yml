@@ -15,16 +15,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ────────────────────────────────────────────────────────────────
+      # Caches
+      # ────────────────────────────────────────────────────────────────
       - name: Cache pre-commit
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: ${{ runner.os }}-precommit-${{ hashFiles('.pre-commit-config.yaml') }}
 
+      - name: Cache Micromamba packages & env
+        id: mamba-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/mamba
+          key: ${{ runner.os }}-mamba-${{ hashFiles('environment.lock.yml') }}
+
+      # ────────────────────────────────────────────────────────────────
+      # Bootstrap env (creates or updates from environment.yml and
+      # regenerates environment.lock.yml)
+      # ────────────────────────────────────────────────────────────────
       - name: Bootstrap Python env
         env:
           MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba
         run: bash ./scripts/bootstrap.sh
+
+      # ────────────────────────────────────────────────────────────────
+      # Drift check – fail if lock file not up-to-date
+      # ────────────────────────────────────────────────────────────────
+      - name: Check lockfile up to date
+        run: |
+          micromamba env export -n ai-smarthome --no-builds > new.lock.yml
+          diff -q new.lock.yml environment.lock.yml
 
       - name: Run tests
         env:
