@@ -13,7 +13,7 @@ all_todos = [
 
 @api.get('/')
 def index():
-    return {"message": "Hello World"}
+    return {"message": "Hello World"} 
 
 @api.get('/todos/{todo_id}')
 def get_todo_by_id(todo_id: int):
