@@ -11,10 +11,13 @@ set -euo pipefail
 # Editable settings
 ###############################################################################
 ENV_NAME="ai-smarthome"                       # micromamba env name
-ROOT_PREFIX="${HOME}/.local/share/mamba"      # where micromamba stores envs
-MAMBA_BIN="${ROOT_PREFIX}/bin/micromamba"     # expected micromamba path
+ROOT_PREFIX="${MAMBA_ROOT_PREFIX:-${HOME}/.local/share/mamba}"
+MAMBA_BIN="${ROOT_PREFIX}/bin/micromamba"
 ENV_FILE="$(git rev-parse --show-toplevel)/environment.yml"  # absolute path
 ###############################################################################
+
+# ensure the directory exists _and_ is empty if brand-new
+mkdir -p "${ROOT_PREFIX}"
 
 # ---------- helpers ----------------------------------------------------------
 log()   { printf "\e[1;32m[+]\e[0m %s\n" "$*"; }
