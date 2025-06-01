@@ -4,8 +4,13 @@ name: CI
 
 on:
   push:
-    branches: [ main, feature/** ]
+    - dev
+    - staging
+    - main
   pull_request:
+    branches:
+      - dev
+      - staging
 
 jobs:
   test:
@@ -41,5 +46,5 @@ jobs:
 
       - name: Run tests
         env:
-          MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba      
+          MAMBA_ROOT_PREFIX: ${{ runner.temp }}/mamba
         run: micromamba run -n gohomeai pytest -q ml/tests
