@@ -1,0 +1,35 @@
+name: ai-smarthome
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  # core interpreter
+  - python=3.11
+
+  # tooling
+  - black
+  - isort
+  - flake8
+  - pre-commit
+  - jupyterlab
+
+  # data / ML
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cpuonly   # remove if use CUDA later
+
+  # (optional) fastapi runtime
+  - fastapi
+  - uvicorn[standard]
+
+  # pip extras, if any
+  - pip:
+      - transformers
+      - sentencepiece

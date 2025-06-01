@@ -1,0 +1,22 @@
+# TODO:
+#	1.	Caching the micromamba env is possible with actions/cache keyed on environment.lock.yml. Add it later once the workflow stabilises.
+#	2.	For Go and Node steps, chain them after the bootstrap—each language toolchain is independent.
+name: CI
+
+on:
+  push:
+    branches: [ main, feature/** ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run bootstrap (micromamba)
+        run: bash ./scripts/bootstrap.sh
+
+      - name: Run Python unit tests
+        run: micromamba run -n ai-smarthome pytest -q ml/tests
