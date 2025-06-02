@@ -15,6 +15,7 @@ dependencies:
 
   # data / ML
   - dvc
+  - mlflow
   - numpy<2
   - pandas
   - scipy
