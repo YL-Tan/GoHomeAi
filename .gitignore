@@ -69,4 +69,4 @@ logs/
 # Ignore MLflow’s local tracking folder
 mlruns/
 
-main.go
+app
