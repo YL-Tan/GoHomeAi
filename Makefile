@@ -1,4 +1,4 @@
-.PHONY: dev env lint test fmt
+.PHONY: dev env lint
 
 ## create/update Python env
 env:
@@ -12,13 +12,3 @@ dev: env
 lint:
 	golangci-lint run ./...
 	micromamba run -n gohomeai ruff ml/
-
-## run unit tests
-test:
-	go test ./...
-	micromamba run -n gohomeai pytest ml/tests
-
-## auto-format everything
-fmt:
-	go fmt ./...
-	micromamba run -n gohomeai black ml/
